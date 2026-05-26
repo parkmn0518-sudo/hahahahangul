@@ -132,32 +132,32 @@ return sentences;
 
 function getExpectedStrokes(char){
 const basic={
-'ㄱ':[ ['down'], ['right'] ],
-'ㄴ':[ ['down'], ['right'] ],
-'ㄷ':[ ['right'], ['down'], ['left'] ],
-'ㄹ':[ ['right'], ['down'], ['left'], ['down'], ['right'] ],
-'ㅁ':[ ['down'], ['right'], ['up'], ['left'] ],
-'ㅂ':[ ['down'], ['right'], ['up'], ['left'], ['middle'] ],
-'ㅅ':[ ['diag1'], ['diag2'] ],
-'ㅇ':[ ['circle'] ],
-'ㅈ':[ ['right'], ['diag1'], ['diag2'] ],
-'ㅊ':[ ['top'], ['right'], ['diag1'], ['diag2'] ],
-'ㅋ':[ ['down'], ['mid'], ['right'] ],
-'ㅌ':[ ['top'], ['down'], ['middle'] ],
-'ㅍ':[ ['leftdown'], ['rightdown'], ['top'], ['middle'] ],
-'ㅎ':[ ['circle'], ['top'], ['middle'] ],
-'ㅏ':[ ['down'], ['right'] ],
-'ㅑ':[ ['down'], ['right'], ['right'] ],
-'ㅓ':[ ['down'], ['left'] ],
-'ㅕ':[ ['down'], ['left'], ['left'] ],
-'ㅗ':[ ['downsmall'], ['right'] ],
-'ㅛ':[ ['downsmall'], ['downsmall'], ['right'] ],
-'ㅜ':[ ['right'], ['downsmall'] ],
-'ㅠ':[ ['right'], ['downsmall'], ['downsmall'] ],
-'ㅡ':[ ['right'] ],
-'ㅣ':[ ['down'] ]
+'ㄱ':['down-right'],
+'ㄴ':['down-right'],
+'ㄷ':['right-down-left'],
+'ㄹ':['right-down-left-down-right'],
+'ㅁ':['down-right-up-left'],
+'ㅂ':['down-right-up-left-middle'],
+'ㅅ':['diag-left-diag-right'],
+'ㅇ':['circle'],
+'ㅈ':['right-diag-left-diag-right'],
+'ㅊ':['top-right-diag-left-diag-right'],
+'ㅋ':['down-middle-right'],
+'ㅌ':['top-down-middle'],
+'ㅍ':['leftdown-rightdown-top-middle'],
+'ㅎ':['circle-top-middle'],
+'ㅏ':['down-right'],
+'ㅑ':['down-right-right'],
+'ㅓ':['down-left'],
+'ㅕ':['down-left-left'],
+'ㅗ':['downsmall-right'],
+'ㅛ':['downsmall-downsmall-right'],
+'ㅜ':['right-downsmall'],
+'ㅠ':['right-downsmall-downsmall'],
+'ㅡ':['right'],
+'ㅣ':['down']
 };
-return basic[char] || [['free']];
+return basic[char] || ['free'];
 }
 
 function drawGuide(){
@@ -230,22 +230,39 @@ const dy=pos.y-startY;
 
 let detected='';
 
-if(Math.abs(dx)>Math.abs(dy)){
+if(Math.abs(dx)>40 && Math.abs(dy)<30){
 detected=dx>0?'right':'left';
-}else{
+}else if(Math.abs(dy)>40 && Math.abs(dx)<30){
 detected=dy>0?'down':'up';
-}
-
-if(Math.abs(dx)>40 && Math.abs(dy)>40){
-detected=dx>0?'diag1':'diag2';
+}else if(dx>20 && dy>20){
+detected='diag-right';
+}else if(dx< -20 && dy>20){
+detected='diag-left';
+}else{
+message.textContent='❌ 바르게 이어서 써주세요!';
+message.className='message error';
+setTimeout(resetCanvas,700);
+return;
 }
 
 if(mode==='sentence'){
 currentStroke++;
-if(currentStroke>=3){
+
+ctx.fillStyle='rgba(34,197,94,0.15)';
+ctx.fillRect(0,0,canvas.width,canvas.height);
+
+if(currentStroke>=text.length){
 passStage();
 }else{
-message.textContent='순서대로 계속 써보세요!';
+message.textContent='문장을 끝까지 정확하게 써주세요!';
+message.className='message info';
+}
+
+if(Math.abs(dx)<10 && Math.abs(dy)<10){
+ctx.fillStyle='rgba(239,68,68,0.25)';
+ctx.fillRect(0,0,canvas.width,canvas.height);
+message.textContent='❌ 틀린 글자가 있어요!';
+message.className='message error';
 }
 return;
 }
@@ -255,14 +272,19 @@ const chars=text.split('');
 
 let all=[];
 chars.forEach(c=>{
-all=all.concat(getExpectedStrokes(c));
+const value=getExpectedStrokes(c);
+if(Array.isArray(value)){
+value.forEach(v=>all.push(v));
+}else{
+all.push(value);
+}
 });
 
-const expected=all[currentStroke][0];
+const expected=all[currentStroke];
 
-if(expected===detected || expected==='free'){
+if(expected.includes(detected) || expected==='free'){
 currentStroke++;
-message.textContent='좋아요! 다음 획을 써보세요!';
+message.textContent='좋아요! 계속 이어서 써보세요!';
 message.className='message info';
 
 if(currentStroke>=all.length){
@@ -277,8 +299,12 @@ setTimeout(resetCanvas,700);
 
 function passStage(){
 passed=true;
-message.textContent='🎉 성공! 다음 단계로 이동할 수 있어요!';
+message.textContent='🎉 성공! 자동으로 다음 단계로 이동합니다!';
 message.className='message success';
+
+setTimeout(()=>{
+nextItem(true);
+},1000);
 }
 
 function resetCanvas(){
@@ -288,8 +314,8 @@ message.textContent='다시 써보세요!';
 message.className='message info';
 }
 
-function nextItem(){
-if(!passed){
+function nextItem(auto=false){
+if(!passed && !auto){
 message.textContent='❌ 올바른 순서로 완료해야 넘어갈 수 있어요!';
 message.className='message error';
 return;
