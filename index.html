@@ -132,28 +132,28 @@ return sentences;
 
 function getExpectedStrokes(char){
 const basic={
-'ㄱ':['down-right'],
-'ㄴ':['down-right'],
-'ㄷ':['right-down-left'],
-'ㄹ':['right-down-left-down-right'],
-'ㅁ':['down-right-up-left'],
-'ㅂ':['down-right-up-left-middle'],
-'ㅅ':['diag-left-diag-right'],
+'ㄱ':['down','right'],
+'ㄴ':['down','right'],
+'ㄷ':['right','down','left'],
+'ㄹ':['right','down','left','down','right'],
+'ㅁ':['down','right','up','left'],
+'ㅂ':['down','right','up','left','middle'],
+'ㅅ':['diag-left','diag-right'],
 'ㅇ':['circle'],
-'ㅈ':['right-diag-left-diag-right'],
-'ㅊ':['top-right-diag-left-diag-right'],
-'ㅋ':['down-middle-right'],
-'ㅌ':['top-down-middle'],
-'ㅍ':['leftdown-rightdown-top-middle'],
-'ㅎ':['circle-top-middle'],
-'ㅏ':['down-right'],
-'ㅑ':['down-right-right'],
-'ㅓ':['down-left'],
-'ㅕ':['down-left-left'],
-'ㅗ':['downsmall-right'],
-'ㅛ':['downsmall-downsmall-right'],
-'ㅜ':['right-downsmall'],
-'ㅠ':['right-downsmall-downsmall'],
+'ㅈ':['right','diag-left','diag-right'],
+'ㅊ':['top','right','diag-left','diag-right'],
+'ㅋ':['down','middle','right'],
+'ㅌ':['top','down','middle'],
+'ㅍ':['leftdown','rightdown','top','middle'],
+'ㅎ':['circle','top','middle'],
+'ㅏ':['down','right'],
+'ㅑ':['down','right','right'],
+'ㅓ':['down','left'],
+'ㅕ':['down','left','left'],
+'ㅗ':['downsmall','right'],
+'ㅛ':['downsmall','downsmall','right'],
+'ㅜ':['right','downsmall'],
+'ㅠ':['right','downsmall','downsmall'],
 'ㅡ':['right'],
 'ㅣ':['down']
 };
@@ -172,6 +172,28 @@ const text = getCurrentList()[currentIndex];
 ctx.font='120px Arial';
 ctx.textAlign='center';
 ctx.strokeText(text,250,240);
+
+const chars=text.split('');
+let order=1;
+
+ctx.fillStyle='#4f46e5';
+ctx.font='28px Arial';
+
+chars.forEach((char,index)=>{
+const x=150+(index*80);
+const y=90;
+const strokes=getExpectedStrokes(char);
+
+strokes.forEach((s,i)=>{
+ctx.beginPath();
+ctx.arc(x+(i*18),y+(i*18),14,0,Math.PI*2);
+ctx.fill();
+ctx.fillStyle='white';
+ctx.fillText(order,x+(i*18)-5,y+(i*18)+7);
+ctx.fillStyle='#4f46e5';
+order++;
+});
+});
 }
 
 function updateUI(){
@@ -248,18 +270,17 @@ return;
 if(mode==='sentence'){
 currentStroke++;
 
-ctx.fillStyle='rgba(34,197,94,0.15)';
-ctx.fillRect(0,0,canvas.width,canvas.height);
+const totalSentenceLength = text.replace(/\s/g,'').length;
 
-if(currentStroke>=text.length){
+if(currentStroke >= totalSentenceLength){
 passStage();
 }else{
-message.textContent='문장을 끝까지 정확하게 써주세요!';
+message.textContent='문장 완성 중... ' + currentStroke + '/' + totalSentenceLength;
 message.className='message info';
 }
 
-if(Math.abs(dx)<10 && Math.abs(dy)<10){
-ctx.fillStyle='rgba(239,68,68,0.25)';
+if(detected==='dot'){
+ctx.fillStyle='rgba(239,68,68,0.3)';
 ctx.fillRect(0,0,canvas.width,canvas.height);
 message.textContent='❌ 틀린 글자가 있어요!';
 message.className='message error';
