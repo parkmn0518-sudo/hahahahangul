@@ -1,306 +1,309 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>한글 따라쓰기</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      font-family: 'Pretendard', sans-serif;
-    }
-
-    body {
-      margin: 0;
-      background: #f7f9ff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    .app {
-      width: 100%;
-      max-width: 500px;
-      background: white;
-      border-radius: 24px;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-      text-align: center;
-    }
-
-    h1 {
-      margin-top: 0;
-      color: #4f46e5;
-    }
-
-    .subtitle {
-      color: #666;
-      margin-bottom: 20px;
-    }
-
-    .letter-box {
-      font-size: 100px;
-      font-weight: bold;
-      color: #d1d5db;
-      position: relative;
-      margin-bottom: 10px;
-    }
-
-    canvas {
-      border: 4px solid #c7d2fe;
-      border-radius: 20px;
-      background: white;
-      touch-action: none;
-    }
-
-    .message {
-      margin-top: 15px;
-      font-size: 20px;
-      font-weight: bold;
-      min-height: 30px;
-    }
-
-    .success {
-      color: #16a34a;
-    }
-
-    .error {
-      color: #dc2626;
-    }
-
-    .buttons {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-      justify-content: center;
-    }
-
-    button {
-      border: none;
-      padding: 14px 20px;
-      border-radius: 14px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .reset {
-      background: #e5e7eb;
-    }
-
-    .next {
-      background: #4f46e5;
-      color: white;
-    }
-
-    button:hover {
-      transform: scale(1.03);
-    }
-
-    .stars {
-      margin-top: 20px;
-      font-size: 24px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한글 따라쓰기 앱</title>
+<style>
+*{box-sizing:border-box;font-family:Arial,sans-serif;}
+body{
+margin:0;
+background:#f4f7ff;
+padding:20px;
+display:flex;
+justify-content:center;
+}
+.app{
+width:100%;
+max-width:700px;
+background:white;
+padding:20px;
+border-radius:25px;
+box-shadow:0 10px 30px rgba(0,0,0,0.1);
+text-align:center;
+}
+h1{color:#4f46e5;}
+.menu{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+margin-bottom:20px;
+}
+.menu button{
+padding:15px;
+border:none;
+border-radius:15px;
+font-size:16px;
+font-weight:bold;
+background:#4f46e5;
+color:white;
+cursor:pointer;
+}
+canvas{
+border:4px solid #c7d2fe;
+border-radius:20px;
+background:white;
+touch-action:none;
+}
+.target{
+font-size:100px;
+color:#d1d5db;
+margin-bottom:10px;
+font-weight:bold;
+}
+.message{
+height:30px;
+margin-top:10px;
+font-size:20px;
+font-weight:bold;
+}
+.success{color:green;}
+.error{color:red;}
+.info{color:#4f46e5;}
+.controls{
+margin-top:15px;
+display:flex;
+gap:10px;
+justify-content:center;
+}
+.controls button{
+padding:12px 18px;
+border:none;
+border-radius:12px;
+font-weight:bold;
+cursor:pointer;
+}
+.reset{background:#e5e7eb;}
+.next{background:#4f46e5;color:white;}
+.progress{
+margin-top:15px;
+font-size:18px;
+font-weight:bold;
+}
+</style>
 </head>
 <body>
-  <div class="app">
-    <h1>✏️ 한글 따라쓰기</h1>
-    <div class="subtitle">획순대로 써야 성공해요!</div>
+<div class="app">
+<h1>✏️ 한글 따라쓰기</h1>
 
-    <div class="letter-box" id="letterDisplay">ㄱ</div>
+<div class="menu">
+<button onclick="changeMode('consonant')">1. 자음 따라쓰기</button>
+<button onclick="changeMode('vowel')">2. 모음 따라쓰기</button>
+<button onclick="changeMode('word')">3. 단어 따라쓰기</button>
+<button onclick="changeMode('sentence')">4. 문장 따라쓰기</button>
+</div>
 
-    <canvas id="canvas" width="350" height="350"></canvas>
+<div class="target" id="targetText">ㄱ</div>
+<canvas id="canvas" width="500" height="400"></canvas>
+<div class="message info" id="message">획순대로 따라 써보세요!</div>
 
-    <div class="message" id="message"></div>
+<div class="controls">
+<button class="reset" onclick="resetCanvas()">다시쓰기</button>
+<button class="next" onclick="nextItem()">다음</button>
+</div>
 
-    <div class="buttons">
-      <button class="reset" onclick="resetCanvas()">다시 쓰기</button>
-      <button class="next" onclick="nextLetter()">다음 글자</button>
-    </div>
+<div class="progress" id="progress"></div>
+</div>
 
-    <div class="stars" id="stars">⭐ 0</div>
-  </div>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const targetText = document.getElementById('targetText');
+const message = document.getElementById('message');
+const progress = document.getElementById('progress');
 
-  <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const message = document.getElementById('message');
-    const letterDisplay = document.getElementById('letterDisplay');
-    const starsDisplay = document.getElementById('stars');
+const consonants = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const vowels = ['ㅏ','ㅑ','ㅓ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ'];
+const words = ['가방','학교','바다','사과'];
+const sentences = ['나는 학교에 간다','오늘은 날씨가 좋다'];
 
-    let drawing = false;
-    let currentStroke = 0;
-    let stars = 0;
+let mode = 'consonant';
+let currentIndex = 0;
+let currentStroke = 0;
+let drawing = false;
+let passed = false;
 
-    const letters = [
-      {
-        char: 'ㄱ',
-        strokes: [
-          {
-            start: { x: 100, y: 80 },
-            end: { x: 100, y: 250 },
-            direction: 'down'
-          },
-          {
-            start: { x: 100, y: 250 },
-            end: { x: 240, y: 250 },
-            direction: 'right'
-          }
-        ]
-      },
-      {
-        char: 'ㄴ',
-        strokes: [
-          {
-            start: { x: 100, y: 80 },
-            end: { x: 100, y: 250 },
-            direction: 'down'
-          },
-          {
-            start: { x: 100, y: 250 },
-            end: { x: 240, y: 250 },
-            direction: 'right'
-          }
-        ]
-      },
-      {
-        char: 'ㅏ',
-        strokes: [
-          {
-            start: { x: 160, y: 80 },
-            end: { x: 160, y: 250 },
-            direction: 'down'
-          },
-          {
-            start: { x: 160, y: 150 },
-            end: { x: 230, y: 150 },
-            direction: 'right'
-          }
-        ]
-      }
-    ];
+function getCurrentList(){
+if(mode==='consonant') return consonants;
+if(mode==='vowel') return vowels;
+if(mode==='word') return words;
+return sentences;
+}
 
-    let currentLetterIndex = 0;
-    let currentLetter = letters[currentLetterIndex];
+function getExpectedStrokes(char){
+const basic={
+'ㄱ':[ ['down'], ['right'] ],
+'ㄴ':[ ['down'], ['right'] ],
+'ㄷ':[ ['right'], ['down'], ['left'] ],
+'ㄹ':[ ['right'], ['down'], ['left'], ['down'], ['right'] ],
+'ㅁ':[ ['down'], ['right'], ['up'], ['left'] ],
+'ㅂ':[ ['down'], ['right'], ['up'], ['left'], ['middle'] ],
+'ㅅ':[ ['diag1'], ['diag2'] ],
+'ㅇ':[ ['circle'] ],
+'ㅈ':[ ['right'], ['diag1'], ['diag2'] ],
+'ㅊ':[ ['top'], ['right'], ['diag1'], ['diag2'] ],
+'ㅋ':[ ['down'], ['mid'], ['right'] ],
+'ㅌ':[ ['top'], ['down'], ['middle'] ],
+'ㅍ':[ ['leftdown'], ['rightdown'], ['top'], ['middle'] ],
+'ㅎ':[ ['circle'], ['top'], ['middle'] ],
+'ㅏ':[ ['down'], ['right'] ],
+'ㅑ':[ ['down'], ['right'], ['right'] ],
+'ㅓ':[ ['down'], ['left'] ],
+'ㅕ':[ ['down'], ['left'], ['left'] ],
+'ㅗ':[ ['downsmall'], ['right'] ],
+'ㅛ':[ ['downsmall'], ['downsmall'], ['right'] ],
+'ㅜ':[ ['right'], ['downsmall'] ],
+'ㅠ':[ ['right'], ['downsmall'], ['downsmall'] ],
+'ㅡ':[ ['right'] ],
+'ㅣ':[ ['down'] ]
+};
+return basic[char] || [['free']];
+}
 
-    function drawGuide() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+function drawGuide(){
+ctx.clearRect(0,0,canvas.width,canvas.height);
+ctx.lineWidth=8;
+ctx.strokeStyle='#d1d5db';
+ctx.lineCap='round';
 
-      ctx.strokeStyle = '#d1d5db';
-      ctx.lineWidth = 12;
-      ctx.lineCap = 'round';
+if(mode==='sentence') return;
 
-      currentLetter.strokes.forEach(stroke => {
-        ctx.beginPath();
-        ctx.moveTo(stroke.start.x, stroke.start.y);
-        ctx.lineTo(stroke.end.x, stroke.end.y);
-        ctx.stroke();
-      });
-    }
+const text = getCurrentList()[currentIndex];
+ctx.font='120px Arial';
+ctx.textAlign='center';
+ctx.strokeText(text,250,240);
+}
 
-    function getPos(e) {
-      const rect = canvas.getBoundingClientRect();
-      const touch = e.touches ? e.touches[0] : e;
+function updateUI(){
+const list = getCurrentList();
+targetText.textContent=list[currentIndex];
+progress.textContent=`${currentIndex+1} / ${list.length}`;
+message.textContent='획순대로 따라 써보세요!';
+message.className='message info';
+currentStroke=0;
+passed=false;
+drawGuide();
+}
 
-      return {
-        x: touch.clientX - rect.left,
-        y: touch.clientY - rect.top
-      };
-    }
+function changeMode(newMode){
+mode=newMode;
+currentIndex=0;
+updateUI();
+}
 
-    function distance(a, b) {
-      return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
-    }
+function getPos(e){
+const rect=canvas.getBoundingClientRect();
+return {
+x:e.clientX-rect.left,
+y:e.clientY-rect.top
+};
+}
 
-    let startPoint = null;
+let startX=0;
+let startY=0;
 
-    canvas.addEventListener('pointerdown', (e) => {
-      if (currentStroke >= currentLetter.strokes.length) return;
+canvas.addEventListener('pointerdown',(e)=>{
+drawing=true;
+const pos=getPos(e);
+startX=pos.x;
+startY=pos.y;
+ctx.beginPath();
+ctx.moveTo(pos.x,pos.y);
+ctx.strokeStyle='#4f46e5';
+ctx.lineWidth=8;
+});
 
-      const pos = getPos(e);
-      const expected = currentLetter.strokes[currentStroke];
+canvas.addEventListener('pointermove',(e)=>{
+if(!drawing) return;
+const pos=getPos(e);
+ctx.lineTo(pos.x,pos.y);
+ctx.stroke();
+});
 
-      if (distance(pos, expected.start) < 35) {
-        drawing = true;
-        startPoint = pos;
+canvas.addEventListener('pointerup',(e)=>{
+if(!drawing) return;
+drawing=false;
 
-        ctx.strokeStyle = '#4f46e5';
-        ctx.lineWidth = 10;
-        ctx.lineCap = 'round';
+const pos=getPos(e);
+const dx=pos.x-startX;
+const dy=pos.y-startY;
 
-        ctx.beginPath();
-        ctx.moveTo(pos.x, pos.y);
-      } else {
-        showError('❌ 시작 위치가 틀렸어요!');
-      }
-    });
+let detected='';
 
-    canvas.addEventListener('pointermove', (e) => {
-      if (!drawing) return;
+if(Math.abs(dx)>Math.abs(dy)){
+detected=dx>0?'right':'left';
+}else{
+detected=dy>0?'down':'up';
+}
 
-      const pos = getPos(e);
-      ctx.lineTo(pos.x, pos.y);
-      ctx.stroke();
-    });
+if(Math.abs(dx)>40 && Math.abs(dy)>40){
+detected=dx>0?'diag1':'diag2';
+}
 
-    canvas.addEventListener('pointerup', (e) => {
-      if (!drawing) return;
+if(mode==='sentence'){
+currentStroke++;
+if(currentStroke>=3){
+passStage();
+}else{
+message.textContent='순서대로 계속 써보세요!';
+}
+return;
+}
 
-      drawing = false;
+const text=getCurrentList()[currentIndex];
+const chars=text.split('');
 
-      const pos = getPos(e);
-      const expected = currentLetter.strokes[currentStroke];
+let all=[];
+chars.forEach(c=>{
+all=all.concat(getExpectedStrokes(c));
+});
 
-      const endClose = distance(pos, expected.end) < 45;
+const expected=all[currentStroke][0];
 
-      if (!endClose) {
-        showError('❌ 획 방향이 틀렸어요!');
-        resetCanvas();
-        return;
-      }
+if(expected===detected || expected==='free'){
+currentStroke++;
+message.textContent='좋아요! 다음 획을 써보세요!';
+message.className='message info';
 
-      currentStroke++;
+if(currentStroke>=all.length){
+passStage();
+}
+}else{
+message.textContent='❌ 획순이 틀렸어요!';
+message.className='message error';
+setTimeout(resetCanvas,700);
+}
+});
 
-      if (currentStroke >= currentLetter.strokes.length) {
-        message.className = 'message success';
-        message.textContent = '🎉 성공! 아주 잘했어요!';
+function passStage(){
+passed=true;
+message.textContent='🎉 성공! 다음 단계로 이동할 수 있어요!';
+message.className='message success';
+}
 
-        stars++;
-        starsDisplay.textContent = `⭐ ${stars}`;
-      } else {
-        message.className = 'message';
-        message.textContent = '👍 다음 획을 써보세요!';
-      }
-    });
+function resetCanvas(){
+currentStroke=0;
+drawGuide();
+message.textContent='다시 써보세요!';
+message.className='message info';
+}
 
-    function showError(text) {
-      message.className = 'message error';
-      message.textContent = text;
-    }
+function nextItem(){
+if(!passed){
+message.textContent='❌ 올바른 순서로 완료해야 넘어갈 수 있어요!';
+message.className='message error';
+return;
+}
 
-    function resetCanvas() {
-      currentStroke = 0;
-      message.textContent = '';
-      drawGuide();
-    }
+const list=getCurrentList();
+currentIndex++;
+if(currentIndex>=list.length){
+currentIndex=0;
+}
+updateUI();
+}
 
-    function nextLetter() {
-      currentLetterIndex++;
-
-      if (currentLetterIndex >= letters.length) {
-        currentLetterIndex = 0;
-      }
-
-      currentLetter = letters[currentLetterIndex];
-      letterDisplay.textContent = currentLetter.char;
-
-      resetCanvas();
-    }
-
-    drawGuide();
-  </script>
+updateUI();
+</script>
 </body>
 </html>
