@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>한글 따라쓰기</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Pretendard', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #f7f9ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 500px;
+      background: white;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #4f46e5;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .letter-box {
+      font-size: 100px;
+      font-weight: bold;
+      color: #d1d5db;
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    canvas {
+      border: 4px solid #c7d2fe;
+      border-radius: 20px;
+      background: white;
+      touch-action: none;
+    }
+
+    .message {
+      margin-top: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      min-height: 30px;
+    }
+
+    .success {
+      color: #16a34a;
+    }
+
+    .error {
+      color: #dc2626;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      justify-content: center;
+    }
+
+    button {
+      border: none;
+      padding: 14px 20px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .reset {
+      background: #e5e7eb;
+    }
+
+    .next {
+      background: #4f46e5;
+      color: white;
+    }
+
+    button:hover {
+      transform: scale(1.03);
+    }
+
+    .stars {
+      margin-top: 20px;
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>✏️ 한글 따라쓰기</h1>
+    <div class="subtitle">획순대로 써야 성공해요!</div>
+
+    <div class="letter-box" id="letterDisplay">ㄱ</div>
+
+    <canvas id="canvas" width="350" height="350"></canvas>
+
+    <div class="message" id="message"></div>
+
+    <div class="buttons">
+      <button class="reset" onclick="resetCanvas()">다시 쓰기</button>
+      <button class="next" onclick="nextLetter()">다음 글자</button>
+    </div>
+
+    <div class="stars" id="stars">⭐ 0</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const message = document.getElementById('message');
+    const letterDisplay = document.getElementById('letterDisplay');
+    const starsDisplay = document.getElementById('stars');
+
+    let drawing = false;
+    let currentStroke = 0;
+    let stars = 0;
+
+    const letters = [
+      {
+        char: 'ㄱ',
+        strokes: [
+          {
+            start: { x: 100, y: 80 },
+            end: { x: 100, y: 250 },
+            direction: 'down'
+          },
+          {
+            start: { x: 100, y: 250 },
+            end: { x: 240, y: 250 },
+            direction: 'right'
+          }
+        ]
+      },
+      {
+        char: 'ㄴ',
+        strokes: [
+          {
+            start: { x: 100, y: 80 },
+            end: { x: 100, y: 250 },
+            direction: 'down'
+          },
+          {
+            start: { x: 100, y: 250 },
+            end: { x: 240, y: 250 },
+            direction: 'right'
+          }
+        ]
+      },
+      {
+        char: 'ㅏ',
+        strokes: [
+          {
+            start: { x: 160, y: 80 },
+            end: { x: 160, y: 250 },
+            direction: 'down'
+          },
+          {
+            start: { x: 160, y: 150 },
+            end: { x: 230, y: 150 },
+            direction: 'right'
+          }
+        ]
+      }
+    ];
+
+    let currentLetterIndex = 0;
+    let currentLetter = letters[currentLetterIndex];
+
+    function drawGuide() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = '#d1d5db';
+      ctx.lineWidth = 12;
+      ctx.lineCap = 'round';
+
+      currentLetter.strokes.forEach(stroke => {
+        ctx.beginPath();
+        ctx.moveTo(stroke.start.x, stroke.start.y);
+        ctx.lineTo(stroke.end.x, stroke.end.y);
+        ctx.stroke();
+      });
+    }
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches ? e.touches[0] : e;
+
+      return {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+      };
+    }
+
+    function distance(a, b) {
+      return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+    }
+
+    let startPoint = null;
+
+    canvas.addEventListener('pointerdown', (e) => {
+      if (currentStroke >= currentLetter.strokes.length) return;
+
+      const pos = getPos(e);
+      const expected = currentLetter.strokes[currentStroke];
+
+      if (distance(pos, expected.start) < 35) {
+        drawing = true;
+        startPoint = pos;
+
+        ctx.strokeStyle = '#4f46e5';
+        ctx.lineWidth = 10;
+        ctx.lineCap = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+      } else {
+        showError('❌ 시작 위치가 틀렸어요!');
+      }
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!drawing) return;
+
+      const pos = getPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+    });
+
+    canvas.addEventListener('pointerup', (e) => {
+      if (!drawing) return;
+
+      drawing = false;
+
+      const pos = getPos(e);
+      const expected = currentLetter.strokes[currentStroke];
+
+      const endClose = distance(pos, expected.end) < 45;
+
+      if (!endClose) {
+        showError('❌ 획 방향이 틀렸어요!');
+        resetCanvas();
+        return;
+      }
+
+      currentStroke++;
+
+      if (currentStroke >= currentLetter.strokes.length) {
+        message.className = 'message success';
+        message.textContent = '🎉 성공! 아주 잘했어요!';
+
+        stars++;
+        starsDisplay.textContent = `⭐ ${stars}`;
+      } else {
+        message.className = 'message';
+        message.textContent = '👍 다음 획을 써보세요!';
+      }
+    });
+
+    function showError(text) {
+      message.className = 'message error';
+      message.textContent = text;
+    }
+
+    function resetCanvas() {
+      currentStroke = 0;
+      message.textContent = '';
+      drawGuide();
+    }
+
+    function nextLetter() {
+      currentLetterIndex++;
+
+      if (currentLetterIndex >= letters.length) {
+        currentLetterIndex = 0;
+      }
+
+      currentLetter = letters[currentLetterIndex];
+      letterDisplay.textContent = currentLetter.char;
+
+      resetCanvas();
+    }
+
+    drawGuide();
+  </script>
+</body>
+</html>
